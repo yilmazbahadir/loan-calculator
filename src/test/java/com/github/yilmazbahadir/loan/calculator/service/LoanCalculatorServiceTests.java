@@ -1,7 +1,8 @@
 package com.github.yilmazbahadir.loan.calculator.service;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -16,22 +17,24 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.github.yilmazbahadir.loan.calculator.data.model.Quote;
-import com.github.yilmazbahadir.loan.calculator.data.repository.MarketRepository;
+import com.github.yilmazbahadir.loan.calculator.data.model.Offer;
 import com.github.yilmazbahadir.loan.calculator.exception.LoanAmountInvalidIncrementException;
 import com.github.yilmazbahadir.loan.calculator.exception.LoanAmountOutOfRangeException;
+import com.github.yilmazbahadir.loan.calculator.service.engine.InsufficientOffersException;
+import com.github.yilmazbahadir.loan.calculator.service.engine.QuoteEngine;
 import com.github.yilmazbahadir.loan.calculator.service.model.LoanAmount;
 import com.github.yilmazbahadir.loan.calculator.service.model.LoanAmountIncrementValidator;
 import com.github.yilmazbahadir.loan.calculator.service.model.LoanAmountRangeValidator;
-import com.github.yilmazbahadir.loan.calculator.service.model.LoanResponse;
+import com.github.yilmazbahadir.loan.calculator.service.model.Quote;
 
 /*
  * Cases to be tested:
- * - Valid market data and loan amount should return loan response
- * - Valid market data and invalid loan amount out of range should throw out of range exception
- * - Valid market data and valid loan amount inside the range invalid increment should throw invalid increment step
- * - No market data should throw no market data exception
+ * OK - Valid market data and loan amount should return loan response
+ * OK - Valid market data and invalid loan amount out of range should throw out of range exception
+ * OK - Valid market data and valid loan amount inside the range invalid increment should throw invalid increment step
  * - When exactly 1 Quote match found
+ * 		QuoteMatchingEngine
+ * 			QuoteMatchStrategy
  * - When response quote is aggregated multiple quotes
  * - When no match found(insufficient amount in the market) 
  * */
@@ -41,41 +44,55 @@ public class LoanCalculatorServiceTests {
 
 	@Spy
 	private LoanAmountIncrementValidator loanAmountIncrementValidator;
-	
+
 	@Spy
 	private LoanAmountRangeValidator loanAmountRangeValidator;
-	
+
 	@Mock
-	private MarketRepository lenderMarketRepository;
+	private QuoteEngine quoteEngine;
 
 	@InjectMocks
 	private CompetitiveLoanCalculatorService loanCalculatorService;
 
 	@Test
 	public void calculateLoan_ValidMarketDataAndLoanAmount_ShouldReturnLoanResponse()
-			throws LoanAmountOutOfRangeException, LoanAmountInvalidIncrementException {
+			throws LoanAmountOutOfRangeException, LoanAmountInvalidIncrementException, InsufficientOffersException {
 		LoanAmount requestedLoanAmount = new LoanAmount(BigDecimal.valueOf(1100.0));
 
-		List<Quote> quotes = new ArrayList<>();
-		when(lenderMarketRepository.findAllQuotes()).thenReturn(quotes);
-		//when(loanAmountRangeValidator.isValid(requestedLoanAmount, null)).thenReturn(true);
-		//when(loanAmountIncrementValidator.isValid(requestedLoanAmount, null)).thenReturn(true);
+		List<Offer> offers = new ArrayList<>();
+		when(quoteEngine.getQuote(requestedLoanAmount.getValue(), 36)).thenReturn(Quote.builder().build());
 
-		LoanResponse loanResponse = this.loanCalculatorService.calculateLoan(requestedLoanAmount);
+		Quote quote = this.loanCalculatorService.calculateLoan(requestedLoanAmount);
 
-		assertThat(loanResponse, is(notNullValue()));
+		assertThat(quote, is(notNullValue()));
 	}
 
 	@Test(expected = LoanAmountOutOfRangeException.class)
 	public void calculateLoan_LoanAmountOutOfRange_ShouldThrowLoanAmountOutOfRangeException()
-			throws LoanAmountOutOfRangeException, LoanAmountInvalidIncrementException {
+			throws LoanAmountOutOfRangeException, LoanAmountInvalidIncrementException, InsufficientOffersException {
 		LoanAmount requestedLoanAmount = new LoanAmount(BigDecimal.valueOf(900.0));
 
-		//List<Quote> quotes = new ArrayList<>();
-		//when(lenderMarketRepository.findAllQuotes()).thenReturn(quotes);
-		//when(loanAmountRangeValidator.isValid(requestedLoanAmount, null)).thenReturn(false);
+		this.loanCalculatorService.calculateLoan(requestedLoanAmount);
+	}
 
-		LoanResponse loanResponse = this.loanCalculatorService.calculateLoan(requestedLoanAmount);
+	@Test(expected = LoanAmountInvalidIncrementException.class)
+	public void calculateLoan_LoanAmountOutOfRange_ShouldThrowLoanAmountInvalidIncerementException()
+			throws LoanAmountOutOfRangeException, LoanAmountInvalidIncrementException, InsufficientOffersException {
+		LoanAmount requestedLoanAmount = new LoanAmount(BigDecimal.valueOf(1105.0));
+
+		this.loanCalculatorService.calculateLoan(requestedLoanAmount);
+	}
+
+	@Test
+	public void calculateLoan_OneExactMatchQuoteFound_ShouldReturnResult()
+			throws LoanAmountOutOfRangeException, LoanAmountInvalidIncrementException, InsufficientOffersException {
+		LoanAmount requestedLoanAmount = new LoanAmount(BigDecimal.valueOf(1000));
+		Quote expectedQuote = Quote.builder().requestedAmount(requestedLoanAmount.getValue()).rate(new BigDecimal("0.07"))
+				.monthlyRepayment(new BigDecimal("30.78")).totalRepayment(new BigDecimal("1108.10")).build();
+		when(this.quoteEngine.getQuote(requestedLoanAmount.getValue(), 36)).thenReturn(expectedQuote);
+		Quote quote = this.loanCalculatorService.calculateLoan(requestedLoanAmount);
+
+		assertThat(quote, is(equalTo(expectedQuote)));
 	}
 
 }

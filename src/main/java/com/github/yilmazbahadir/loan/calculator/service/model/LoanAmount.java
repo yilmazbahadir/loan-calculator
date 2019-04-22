@@ -2,7 +2,7 @@ package com.github.yilmazbahadir.loan.calculator.service.model;
 
 import java.math.BigDecimal;
 
-public class LoanAmount implements Comparable<LoanAmount> {
+public final class LoanAmount implements Comparable<LoanAmount> {
 
 	@ValidLoanAmountIncrement
 	private final BigDecimal value;

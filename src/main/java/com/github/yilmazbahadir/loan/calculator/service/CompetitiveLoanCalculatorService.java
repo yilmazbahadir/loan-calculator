@@ -5,42 +5,44 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.github.yilmazbahadir.loan.calculator.data.repository.MarketRepository;
 import com.github.yilmazbahadir.loan.calculator.exception.LoanAmountInvalidIncrementException;
 import com.github.yilmazbahadir.loan.calculator.exception.LoanAmountOutOfRangeException;
+import com.github.yilmazbahadir.loan.calculator.service.engine.InsufficientOffersException;
+import com.github.yilmazbahadir.loan.calculator.service.engine.QuoteEngine;
 import com.github.yilmazbahadir.loan.calculator.service.model.LoanAmount;
 import com.github.yilmazbahadir.loan.calculator.service.model.LoanAmountIncrementValidator;
 import com.github.yilmazbahadir.loan.calculator.service.model.LoanAmountRangeValidator;
-import com.github.yilmazbahadir.loan.calculator.service.model.LoanResponse;
+import com.github.yilmazbahadir.loan.calculator.service.model.Quote;
 
 @Service
 public class CompetitiveLoanCalculatorService implements LoanCalculatorService {
 
-	private MarketRepository marketRepository;
+	private QuoteEngine quoteEngine;
 	private LoanAmountRangeValidator loanAmountRangeValidator;
 	private LoanAmountIncrementValidator loanAmountIncrementValidator;
 
 	@Autowired
-	public CompetitiveLoanCalculatorService(MarketRepository marketRepository,
-			LoanAmountRangeValidator loanAmountRangeValidator,
+	public CompetitiveLoanCalculatorService(QuoteEngine quoteEngine, LoanAmountRangeValidator loanAmountRangeValidator,
 			LoanAmountIncrementValidator loanAmountIncrementValidator) {
-		this.marketRepository = marketRepository;
+		this.quoteEngine = quoteEngine;
 		this.loanAmountRangeValidator = loanAmountRangeValidator;
 		this.loanAmountIncrementValidator = loanAmountIncrementValidator;
 	}
 
 	@Override
-	public LoanResponse calculateLoan(@Valid LoanAmount requestedLoanAmount)
-			throws LoanAmountOutOfRangeException, LoanAmountInvalidIncrementException {
+	public Quote calculateLoan(@Valid LoanAmount requestedLoanAmount)
+			throws LoanAmountOutOfRangeException, LoanAmountInvalidIncrementException, InsufficientOffersException {
+		/* TODO if statements below shouldn't be there. 
+		 * Instead, they should be validated by aop. But in order to test it they are coded as below :( */
 		if (!this.loanAmountRangeValidator.isValid(requestedLoanAmount, null)) {
-			throw new LoanAmountOutOfRangeException(requestedLoanAmount);
+			throw new LoanAmountOutOfRangeException(requestedLoanAmount); // TODO pass parameter lowerBound, upperBound
 		}
 
 		if (!this.loanAmountIncrementValidator.isValid(requestedLoanAmount, null)) {
-			throw new LoanAmountInvalidIncrementException(requestedLoanAmount);
+			throw new LoanAmountInvalidIncrementException(requestedLoanAmount); // TODO pass parameter for 100
 		}
-		marketRepository.findAllQuotes();
-		return new LoanResponse();
+		return this.quoteEngine.getQuote(requestedLoanAmount.getValue(), 36); // TODO months -> parametric
+
 	}
 
 }
