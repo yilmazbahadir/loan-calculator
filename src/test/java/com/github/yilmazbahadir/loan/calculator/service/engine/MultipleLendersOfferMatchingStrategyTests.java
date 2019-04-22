@@ -40,7 +40,7 @@ public class MultipleLendersOfferMatchingStrategyTests {
 				new Offer("Dave", new BigDecimal("0.074"), BigDecimal.valueOf(140)),
 				new Offer("Angela", new BigDecimal("0.071"), BigDecimal.valueOf(60)));
 		
-		List<Offer> expectedOffers = List.of(new Offer("Jane", new BigDecimal("0.069"), BigDecimal.valueOf(480)),
+		List<Offer> expectedOffers = Arrays.asList(new Offer("Jane", new BigDecimal("0.069"), BigDecimal.valueOf(480)),
 				new Offer("Fred", new BigDecimal("0.071"), BigDecimal.valueOf(520)));
 		
 		List<Offer> matchedOffers = this.offerMatchingStrategy.matchOffers(offers, requestedLoanAmount);

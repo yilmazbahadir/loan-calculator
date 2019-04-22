@@ -6,6 +6,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class CompetitiveQuoteEngineTests {
 	public void getQuote_ValidInput_ShouldReturnQuote() throws InsufficientOffersException {
 		BigDecimal requestedLoanAmount = BigDecimal.valueOf(1000);
 		
-		List<Offer> matchedOffers = List.of(new Offer("Jane", new BigDecimal("0.069"), BigDecimal.valueOf(480)),
+		List<Offer> matchedOffers = Arrays.asList(new Offer("Jane", new BigDecimal("0.069"), BigDecimal.valueOf(480)),
 				new Offer("Fred", new BigDecimal("0.071"), BigDecimal.valueOf(520)));
 		when(offerMatchingEngine.match(requestedLoanAmount)).thenReturn(matchedOffers);
 		when(interestCalculator.calculate(new BigDecimal("480"), new BigDecimal("0.069"), 36)).thenReturn(new BigDecimal("531.11790720"));

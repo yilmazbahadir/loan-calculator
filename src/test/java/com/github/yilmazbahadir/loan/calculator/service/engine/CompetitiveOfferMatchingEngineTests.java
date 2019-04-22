@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
@@ -34,7 +35,7 @@ public class CompetitiveOfferMatchingEngineTests {
 	public void getQuote_ValidInput_ShouldReturnQuote() throws InsufficientOffersException {
 		BigDecimal requestedLoanAmount = BigDecimal.valueOf(1000);
 		
-		List<Offer> offers = List.of(new Offer("Bob", new BigDecimal("0.075"), BigDecimal.valueOf(640)),
+		List<Offer> offers = Arrays.asList(new Offer("Bob", new BigDecimal("0.075"), BigDecimal.valueOf(640)),
 				new Offer("Jane", new BigDecimal("0.069"), BigDecimal.valueOf(480)),
 				new Offer("Fred", new BigDecimal("0.071"), BigDecimal.valueOf(520)),
 				new Offer("Mary", new BigDecimal("0.104"), BigDecimal.valueOf(170)),
@@ -42,7 +43,7 @@ public class CompetitiveOfferMatchingEngineTests {
 				new Offer("Dave", new BigDecimal("0.074"), BigDecimal.valueOf(140)),
 				new Offer("Angela", new BigDecimal("0.071"), BigDecimal.valueOf(60)));
 		when(this.marketRepository.findAllOffers()).thenReturn(offers);
-		List<Offer> matchedOffers = List.of(new Offer("Jane", new BigDecimal("0.069"), BigDecimal.valueOf(480)),
+		List<Offer> matchedOffers = Arrays.asList(new Offer("Jane", new BigDecimal("0.069"), BigDecimal.valueOf(480)),
 				new Offer("Fred", new BigDecimal("0.071"), BigDecimal.valueOf(520)));
 		when(offerMatcher.matchOffers(offers, requestedLoanAmount)).thenReturn(matchedOffers);
 		List<Offer> resultList = this.offerMatchingEngine.match(requestedLoanAmount);
